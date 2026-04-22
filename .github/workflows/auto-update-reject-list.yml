@@ -1,0 +1,46 @@
+name: Update Reject List Daily
+
+on:
+  schedule:
+    # 每日 UTC 00:00 自动运行
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 允许手动触发测试
+
+jobs:
+  update-file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: release # 指定切换到 release 分支
+
+      - name: Download reject-list.txt
+        run: |
+          curl -sSL https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/reject-list.txt -o reject-list.txt.tmp
+
+      - name: Compare and update
+        id: compare
+        run: |
+          # 对比差异
+          if ! cmp -s reject-list.txt reject-list.txt.tmp; then
+            echo "Changes detected!"
+            echo "--- Update Details ---"
+            diff -u reject-list.txt reject-list.txt.tmp || true
+            mv reject-list.txt.tmp reject-list.txt
+            ./mihomo/mihomo convert-ruleset domain text reject-list.txt reject-list.mrs 
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes found."
+            echo "changed=false" >> $GITHUB_OUTPUT
+            rm reject-list.txt.tmp
+          fi
+
+      - name: Commit and push
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add reject-list.txt reject-list.mrs
+          git commit -m "auto-update reject-list at $(date -u)"
+          git push origin release
