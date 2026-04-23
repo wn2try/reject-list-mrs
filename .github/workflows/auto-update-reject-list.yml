@@ -27,8 +27,6 @@ jobs:
             echo "Changes detected!"
             echo "--- Update Details ---"
             diff -u reject.txt reject.txt.tmp || true
-            mv reject.txt.tmp reject.txt
-            ./mihomo/mihomo convert-ruleset domain yaml reject.txt reject.mrs 
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "No changes found."
@@ -39,8 +37,15 @@ jobs:
       - name: Commit and push
         if: steps.compare.outputs.changed == 'true'
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir release
+          mv reject.txt.tmp release/reject.txt
+          mv -r mihomo release/
+          cd release
+          mihomo/mihomo convert-ruleset domain yaml reject.txt reject.mrs 
+          git init
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add reject.txt reject.mrs
+          git checkout -b release
+          git add .
           git commit -m "auto-update reject list at $(date -u)"
-          git push origin release
+          git push origin release --force
