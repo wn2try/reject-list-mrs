@@ -15,25 +15,25 @@ jobs:
         with:
           ref: release # 指定切换到 release 分支
 
-      - name: Download reject-list.txt
+      - name: Download reject.txt
         run: |
-          curl -sSL https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/reject-list.txt -o reject-list.txt.tmp
+          curl -sSL https://raw.githubusercontent.com/Loyalsoldier/clash-rules/release/reject.txt -o reject.txt.tmp
 
       - name: Compare and update
         id: compare
         run: |
           # 对比差异
-          if ! cmp -s reject-list.txt reject-list.txt.tmp; then
+          if ! cmp -s reject.txt reject.txt.tmp; then
             echo "Changes detected!"
             echo "--- Update Details ---"
-            diff -u reject-list.txt reject-list.txt.tmp || true
-            mv reject-list.txt.tmp reject-list.txt
-            ./mihomo/mihomo convert-ruleset domain text reject-list.txt reject-list.mrs 
+            diff -u reject.txt reject.txt.tmp || true
+            mv reject.txt.tmp reject.txt
+            ./mihomo/mihomo convert-ruleset domain yaml reject.txt reject.mrs 
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "No changes found."
             echo "changed=false" >> $GITHUB_OUTPUT
-            rm reject-list.txt.tmp
+            rm reject.txt.tmp
           fi
 
       - name: Commit and push
@@ -41,6 +41,6 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add reject-list.txt reject-list.mrs
-          git commit -m "auto-update reject-list at $(date -u)"
+          git add reject.txt reject.mrs
+          git commit -m "auto-update reject list at $(date -u)"
           git push origin release
