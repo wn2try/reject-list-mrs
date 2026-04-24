@@ -39,7 +39,7 @@ jobs:
         run: |
           mkdir release
           mv reject.txt.tmp release/reject.txt
-          mv -r mihomo release/
+          cp -pr mihomo release/
           cd release
           mihomo/mihomo convert-ruleset domain yaml reject.txt reject.mrs 
           git init
